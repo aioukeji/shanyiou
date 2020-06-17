@@ -31,9 +31,8 @@ func (t *FabricClient) Exec(req channel.Request) (*channel.Response, error) {
 	}
 	return &resp, nil
 }
-
-func (t *FabricClient) TableSet(key string, value string, fcn string) (string, error) {
-	req := channel.Request{ChaincodeID: t.ChaincodeID, Fcn: fcn, Args: [][]byte{[]byte(key), []byte(value)}}
+func (t *FabricClient) TableSet(table string, key string, value string) (string, error) {
+	req := channel.Request{ChaincodeID: t.ChaincodeID, Fcn: "tableSet", Args: [][]byte{[]byte(table), []byte(key), []byte(value)}}
 	resp, err := t.Exec(req)
 	if err != nil {
 		return "", err
@@ -41,9 +40,9 @@ func (t *FabricClient) TableSet(key string, value string, fcn string) (string, e
 	return string(resp.TransactionID), nil
 }
 
-func (t *FabricClient) TableGet(key string, fcn string) ([]byte, error) {
-	req := channel.Request{ChaincodeID: t.ChaincodeID, Fcn: fcn,
-		Args: [][]byte{[]byte(key)},
+func (t *FabricClient) TableGet(table string, key string) ([]byte, error) {
+	req := channel.Request{ChaincodeID: t.ChaincodeID, Fcn: "tableGet",
+		Args: [][]byte{[]byte(table), []byte(key)},
 	}
 	resp, err := t.Exec(req)
 	if err != nil {
@@ -54,18 +53,18 @@ func (t *FabricClient) TableGet(key string, fcn string) ([]byte, error) {
 }
 
 func flushIncomeToFabric(s *FabricClient, income CharityIncome) error {
-	return flushValueToFabric(s, income.Id, income, "addCharityIncome", func(txid string) {
+	return flushValueToFabric(s, tableNameIncome, income.Id, income, func(txid string) {
 		AddTxidToIncome(income, txid)
 	})
 }
 
 func flushOutcomeToFabric(s *FabricClient, outcome CharityOutcome) error {
-	return flushValueToFabric(s, outcome.Id, outcome, "addCharityOutcome", func(txid string) {
+	return flushValueToFabric(s, tableNameOutcome, outcome.Id, outcome, func(txid string) {
 		AddTxidToOutcome(outcome, txid)
 	})
 }
 
-func flushValueToFabric(s *FabricClient, key string, val interface{}, fcn string, cb func(txid string)) error {
+func flushValueToFabric(s *FabricClient, tableName string, key string, val interface{}, cb func(txid string)) error {
 	outcomeString, err := json.Marshal(val)
 	if err != nil {
 		fmt.Println("cannot marshal ", err)
@@ -73,7 +72,7 @@ func flushValueToFabric(s *FabricClient, key string, val interface{}, fcn string
 	}
 	fabricFlushLock.Lock()
 	defer fabricFlushLock.Unlock()
-	txid, err := s.TableSet(key, string(outcomeString), fcn)
+	txid, err := s.TableSet(tableName, key, string(outcomeString))
 	if err != nil {
 		return err
 	}
