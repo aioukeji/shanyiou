@@ -2,6 +2,8 @@ package server
 
 var verbose = true
 var hasFabricBackend = true
+var tableNameOutcome = "charityOutcome"
+var tableNameIncome = "charityIncome"
 var summaryKey = "summary"
 var incomeKeyZ = "incomes"
 var outcomeKeyZ = "outcomes"
