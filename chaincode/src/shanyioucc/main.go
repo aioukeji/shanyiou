@@ -15,11 +15,18 @@ func (t *Chaincode) Init(stub shim.ChaincodeStubInterface) peer.Response {
 
 func (t *Chaincode) Invoke(stub shim.ChaincodeStubInterface) peer.Response {
 	fun, args := stub.GetFunctionAndParameters()
-
-	if fun == "tableGet" {
-		return t.tableGet(stub, args)
-	} else if fun == "tableSet" {
-		return t.tableSet(stub, args)
+	if len(args) == 2 {
+		if fun == "addCharityIncome" {
+			return t.addCharityIncome(stub, args[0], args[1])
+		} else if fun == "addCharityOutcome" {
+			return t.addCharityOutcome(stub, args[0], args[1])
+		}
+	} else if len(args) == 1 {
+		if fun == "getCharityIncome" {
+			return t.getCharityIncome(stub, args[0])
+		} else if fun == "getCharityOutcome" {
+			return t.getCharityOutcome(stub, args[0])
+		}
 	}
 
 	return shim.Error(fmt.Sprintf("invalid function name: %v", fun))
